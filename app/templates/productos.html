@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Libreria librito</title>
+</head>
+<body>
+    {% for producto in productos %}
+        <div>
+            <h3>{{ producto.nombre }}</h3>
+            <p>{{ producto.descripcion }}</p>
+            <strong>{{ producto.precio }}</strong>
+            <i>{{ producto.stock }}</i>
+        </div>
+    {% endfor %}
+</body>
+</html>
