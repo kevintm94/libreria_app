@@ -15,7 +15,7 @@ def create_app():
     login_manager.init_app(app)
     
     admin.init_app(app)
-    from .models import User
+    from .models import Usuario
     from .admin import configuracion_admin
     from .auth import auth_bp
     from .libros import libros_bp
