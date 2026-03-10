@@ -70,15 +70,15 @@ border-radius:4px;
 
 <form method="POST">
 
-<label>ISBN</label>
+<label>ISBN <span style="color:red">*</span></label>
 <input type="text" name="isbn" maxlength="20" required
 pattern="[0-9\-]{10,20}"
 title="El ISBN debe contener solo números o guiones">
 
-<label>Titulo</label>
+<label>Titulo <span style="color:red">*</span></label>
 <input type="text" name="titulo" maxlength="200" required>
 
-<label>Autor</label>
+<label>Autor <span style="color:red">*</span></label>
 <input type="text" name="autor" maxlength="100" required>
 
 <label>Editorial</label>
@@ -90,7 +90,7 @@ title="El ISBN debe contener solo números o guiones">
 <label>Genero</label>
 <input type="text" name="genero" maxlength="50">
 
-<label>Precio</label>
+<label>Precio <span style="color:red">*</span></label>
 <input type="number" name="precio" step="0.01" min="0.01" required>
 
 <label>Stock</label>
