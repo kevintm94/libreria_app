@@ -2,6 +2,10 @@ from flask import Blueprint, render_template, request, redirect, url_for
 from .models import Libro
 from .extensions import db
 
+from flask import send_file
+from fpdf import FPDF
+import io
+
 libros_bp = Blueprint("libros", __name__)
 
 # LISTAR LIBROS
@@ -132,3 +136,79 @@ def eliminar_libro(id):
     db.session.commit()
 
     return redirect(url_for("libros.listar_libros"))
+
+# REPORTE PDF DE LIBROS
+@libros_bp.route("/libros/reporte/pdf")
+def reporte_libros_pdf():
+
+    from datetime import datetime
+    from fpdf import FPDF
+    from flask import send_file
+    import io
+
+    libros = Libro.query.all()
+
+    pdf = FPDF()
+    pdf.add_page()
+
+    # TITULO
+    pdf.set_font("Arial","B",16)
+    pdf.cell(190,10,"SISTEMA DE LIBRERIA",0,1,"C")
+
+    pdf.set_font("Arial","B",14)
+    pdf.cell(190,10,"REPORTE DE LIBROS",0,1,"C")
+
+    # FECHA
+    fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+    pdf.set_font("Arial","",10)
+    pdf.cell(190,8,f"Fecha del reporte: {fecha}",0,1)
+
+    pdf.ln(5)
+
+    # ENCABEZADO TABLA
+    pdf.set_font("Arial","B",10)
+
+    pdf.cell(25,8,"ISBN",1,0,"C")
+    pdf.cell(45,8,"Titulo",1,0,"C")
+    pdf.cell(40,8,"Autor",1,0,"C")
+    pdf.cell(25,8,"Precio",1,0,"C")
+    pdf.cell(20,8,"Stock",1,0,"C")
+    pdf.cell(35,8,"Genero",1,1,"C")
+
+    pdf.set_font("Arial","",9)
+
+    for libro in libros:
+
+        isbn = str(libro.isbn)[:12]
+        titulo = libro.titulo[:28]
+        autor = libro.autor[:25]
+        precio = str(libro.precio)
+        stock = str(libro.stock)
+        genero = libro.genero[:20]
+
+        pdf.cell(25,8,isbn,1)
+        pdf.cell(45,8,titulo,1)
+        pdf.cell(40,8,autor,1)
+        pdf.cell(25,8,precio,1,0,"C")
+        pdf.cell(20,8,stock,1,0,"C")
+        pdf.cell(35,8,genero,1)
+
+        pdf.ln()
+
+    pdf.ln(5)
+
+    # TOTAL LIBROS
+    pdf.set_font("Arial","B",11)
+    pdf.cell(190,10,f"Total de libros registrados: {len(libros)}",0,1)
+
+    # GENERAR PDF
+    pdf_bytes = pdf.output(dest="S").encode("latin-1")
+    buffer = io.BytesIO(pdf_bytes)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name="reporte_libros.pdf",
+        mimetype="application/pdf"
+    )
