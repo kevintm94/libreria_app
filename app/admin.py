@@ -49,13 +49,14 @@ class UsuarioModelView(ModelView):
 
 def configuracion_admin():
     admin.add_view(UsuarioModelView(Usuario, db.session))
-    admin.add_view(SecurityModelView(Producto, db.session))
-    admin.add_view(SecurityModelView(Libro, db.session))
-    admin.add_view(SecurityModelView(Cliente, db.session))
-    admin.add_view(SecurityModelView(Venta, db.session))
+    #admin.add_view(SecurityModelView(Producto, db.session))
+    #admin.add_view(SecurityModelView(Libro, db.session))
+    #admin.add_view(SecurityModelView(Cliente, db.session))
+    #admin.add_view(SecurityModelView(Venta, db.session))
 
 
     # Agrega botón en el menú lateral que apunta a tu módulo de libros
     admin.add_link(MenuLink(name="📚 Libros", url="/libros"))
     admin.add_link(MenuLink(name="👥 Clientes", url="/clientes"))
     admin.add_link(MenuLink(name="💰 Ventas", url="/ventas"))
+    admin.add_link(MenuLink(name='Cerrar Sesión', url="/logout"))
