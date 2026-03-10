@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Detalle de Venta #{{ venta.id_venta }}</h1>
+<p><strong>Cliente:</strong> {{ venta.cliente.nombre }} {{ venta.cliente.apellido }}</p>
+<p><strong>Usuario:</strong> {{ venta.usuario.nombre_completo }}</p>
+<p><strong>Fecha:</strong> {{ venta.fecha_venta }}</p>
+<p><strong>Método de Pago:</strong> {{ venta.metodo_pago }}</p>
+<p><strong>Total:</strong> ${{ venta.total }}</p>
+<h3>Libros Vendidos</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Título</th>
+            <th>Cantidad</th>
+            <th>Precio Unitario</th>
+            <th>Subtotal</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for detalle in venta.detalles %}
+        <tr>
+            <td>{{ detalle.libro.titulo }}</td>
+            <td>{{ detalle.cantidad }}</td>
+            <td>${{ detalle.precio_unitario }}</td>
+            <td>${{ detalle.subtotal }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('ventas.listar_ventas') }}" class="btn btn-secondary">Volver a Ventas</a>
+{% endblock %}

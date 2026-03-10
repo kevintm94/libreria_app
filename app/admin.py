@@ -5,7 +5,7 @@ from wtforms import PasswordField
 from wtforms.validators import DataRequired, Length
 from flask_admin.base import MenuLink  # <-- CORRECTO
 from .extensions import admin, db
-from .models import Usuario, Producto, Libro
+from .models import Usuario, Producto, Libro, Cliente, Venta
 class SecurityModelView(ModelView):
     def is_accessible(self):
         return current_user.is_authenticated
@@ -51,7 +51,11 @@ def configuracion_admin():
     admin.add_view(UsuarioModelView(Usuario, db.session))
     admin.add_view(SecurityModelView(Producto, db.session))
     admin.add_view(SecurityModelView(Libro, db.session))
+    admin.add_view(SecurityModelView(Cliente, db.session))
+    admin.add_view(SecurityModelView(Venta, db.session))
 
 
     # Agrega botón en el menú lateral que apunta a tu módulo de libros
     admin.add_link(MenuLink(name="📚 Libros", url="/libros"))
+    admin.add_link(MenuLink(name="👥 Clientes", url="/clientes"))
+    admin.add_link(MenuLink(name="💰 Ventas", url="/ventas"))

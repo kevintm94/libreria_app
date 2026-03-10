@@ -46,3 +46,44 @@ class Libro(db.Model):
 
     def __repr__(self):
         return f"<Libro {self.titulo}>"
+
+class Cliente(db.Model):
+    id_cliente = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    apellido = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True)
+    telefono = db.Column(db.String(20))
+    direccion = db.Column(db.Text)
+
+    def __repr__(self):
+        return f"<Cliente {self.nombre} {self.apellido}>"
+
+
+# --- Nuevos modelos para ventas ---
+class Venta(db.Model):
+    id_venta = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id_cliente = db.Column(db.Integer, db.ForeignKey('cliente.id_cliente'), nullable=False)
+    id_usuario = db.Column(db.Integer, db.ForeignKey('usuario.id_usuario'), nullable=False)
+    fecha_venta = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    total = db.Column(db.Numeric(10, 2), nullable=False)
+    metodo_pago = db.Column(db.Enum('efectivo', 'tarjeta', 'transferencia', 'otros', name='metodo_pago_enum'), default='efectivo')
+
+    cliente = db.relationship('Cliente', backref=db.backref('ventas', lazy=True))
+    usuario = db.relationship('Usuario', backref=db.backref('ventas', lazy=True))
+    detalles = db.relationship('DetalleVenta', backref='venta', lazy=True, cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<Venta {self.id_venta} - Cliente {self.id_cliente}>"
+
+class DetalleVenta(db.Model):
+    id_detalle = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id_venta = db.Column(db.Integer, db.ForeignKey('venta.id_venta'), nullable=False)
+    id_libro = db.Column(db.Integer, db.ForeignKey('libro.id_libro'), nullable=False)
+    cantidad = db.Column(db.Integer, nullable=False)
+    precio_unitario = db.Column(db.Numeric(10, 2), nullable=False)
+    subtotal = db.Column(db.Numeric(10, 2), nullable=False)
+
+    libro = db.relationship('Libro', backref=db.backref('detalles_venta', lazy=True))
+
+    def __repr__(self):
+        return f"<DetalleVenta {self.id_detalle} - Venta {self.id_venta}>"
