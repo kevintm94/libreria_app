@@ -1,17 +1,339 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Libreria Librito</title>
+    <title>Librería Librito - Iniciar Sesión</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #000000;
+            font-family: 'Open Sans', sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        
+        .login-container {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(255, 255, 255, 0.15);
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+            padding: 2.5rem 2rem;
+        }
+        
+        .brand-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .brand-icon {
+            font-size: 3.5rem;
+            color: #333333;
+            margin-bottom: 1rem;
+        }
+        
+        .brand-title {
+            font-family: 'Merriweather', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #000000;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+        
+        .brand-subtitle {
+            color: #666666;
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+        
+        .book-decoration {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .book-decoration span {
+            width: 40px;
+            height: 8px;
+            background: linear-gradient(90deg, #333333, #666666);
+            border-radius: 4px;
+        }
+        
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+        
+        .form-control {
+            background-color: #ffffff;
+            border: 1px solid #dddddd;
+            color: #000000;
+        }
+        
+        .form-control:focus {
+            background-color: #ffffff;
+            border-color: #000000;
+            box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.1);
+            color: #000000;
+        }
+        
+        .form-control::placeholder {
+            color: #999999;
+        }
+        
+        .form-floating > label {
+            color: #666666;
+        }
+        
+        .form-floating > .form-control:focus ~ label,
+        .form-floating > .form-control:not(:placeholder-shown) ~ label {
+            color: #000000;
+            opacity: 0.9;
+        }
+        
+        .input-group-text {
+            background-color: #ffffff;
+            border: 1px solid #dddddd;
+            border-right: none;
+            color: #333333;
+        }
+        
+        .input-group .form-control {
+            border-left: none;
+        }
+        
+        .btn-login {
+            background: #000000;
+            border: none;
+            color: #ffffff;
+            font-weight: 600;
+            padding: 0.75rem;
+            width: 100%;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+        
+        .btn-login:hover {
+            background: #333333;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+            background: #000000;
+        }
+        
+        .btn-outline-secondary {
+            background-color: #ffffff;
+            border: 1px solid #dddddd;
+            border-left: none;
+            color: #333333;
+        }
+        
+        .btn-outline-secondary:hover {
+            background-color: #f5f5f5;
+            border-color: #cccccc;
+            color: #000000;
+        }
+        
+        .forgot-password {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        
+        .forgot-password a {
+            color: #333333;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+        
+        .forgot-password a:hover {
+            color: #000000;
+            text-decoration: underline;
+        }
+        
+        .footer-text {
+            text-align: center;
+            margin-top: 2rem;
+            color: #999999;
+            font-size: 0.8rem;
+            border-top: 1px solid #eeeeee;
+            padding-top: 1.5rem;
+        }
+        
+        .alert {
+            background-color: #ffebee;
+            border: 1px solid #ffcdd2;
+            color: #c62828;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .form-check-input {
+            background-color: #ffffff;
+            border-color: #cccccc;
+        }
+        
+        .form-check-input:checked {
+            background-color: #000000;
+            border-color: #000000;
+        }
+        
+        .form-check-label {
+            color: #333333;
+        }
+        
+        a i {
+            color: #666666;
+        }
+    </style>
 </head>
 <body>
-    <h2>LOGIN</h2>
-    <form method="POST">
-        <input type="text" name="nombreusuario" placeholder="Ingrese usuario" required/>
-        <input type="password" name="contrasenia" placeholder="Ingrese contrasenia" required/>
-        <button type="submit"> Ingresar</button>
-    </form>
+    <div class="login-container">
+        <!-- Sección de marca -->
+        <div class="brand-section">
+            <div class="brand-icon">
+                <i class="bi bi-book-half"></i>
+            </div>
+            <h1 class="brand-title">Librería Librito</h1>
+            <div class="book-decoration">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <p class="brand-subtitle">Tu espacio literario</p>
+        </div>
+
+        <!-- Mensajes de alerta -->
+        <div id="alertMessage" class="alert alert-danger d-none" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Usuario o contraseña incorrectos
+        </div>
+
+        <!-- Formulario de login -->
+        <form method="POST" id="loginForm">
+            <!-- Campo de usuario -->
+            <div class="form-floating mb-3">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-person-circle"></i>
+                    </span>
+                    <div class="form-floating" style="flex: 1;">
+                        <input type="text" 
+                               class="form-control" 
+                               id="nombreusuario" 
+                               name="nombreusuario" 
+                               placeholder="Ingrese usuario" 
+                               required>
+                        <label for="nombreusuario">Usuario</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campo de contraseña -->
+            <div class="form-floating mb-3">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-lock"></i>
+                    </span>
+                    <div class="form-floating" style="flex: 1;">
+                        <input type="password" 
+                               class="form-control" 
+                               id="contrasenia" 
+                               name="contrasenia" 
+                               placeholder="Ingrese contraseña" 
+                               required>
+                        <label for="contrasenia">Contraseña</label>
+                    </div>
+                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recordar contraseña -->
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="rememberMe">
+                <label class="form-check-label" for="rememberMe">Recordarme</label>
+            </div>
+
+            <!-- Botón de login -->
+            <button type="submit" class="btn-login">
+                <i class="bi bi-box-arrow-in-right me-2"></i>
+                Iniciar Sesión
+            </button>
+
+            <!-- Enlace para recuperar contraseña -->
+            <div class="forgot-password">
+                <a href="#">
+                    <i class="bi bi-question-circle me-1"></i>
+                    ¿Olvidaste tu contraseña?
+                </a>
+            </div>
+        </form>
+
+        <!-- Footer -->
+        <div class="footer-text">
+            <i class="bi bi-c-circle me-1"></i>
+            2026 Librería Librito - Todos los derechos reservados
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-zD9k8n5nR8e0HdsI5f5r5Q5F5f5r5Q5F5r5Q5F5f5r5Q5" crossorigin="anonymous"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('contrasenia');
+            
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                const icon = this.querySelector('i');
+                icon.classList.toggle('bi-eye');
+                icon.classList.toggle('bi-eye-slash');
+            });
+
+            const loginForm = document.getElementById('loginForm');
+            loginForm.addEventListener('submit', function(e) {
+                const username = document.getElementById('nombreusuario').value.trim();
+                const password = document.getElementById('contrasenia').value.trim();
+                
+                if (username === '' || password === '') {
+                    e.preventDefault();
+                    showAlert('Por favor completa todos los campos');
+                }
+            });
+
+            function showAlert(message) {
+                const alertDiv = document.getElementById('alertMessage');
+                alertDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${message}`;
+                alertDiv.classList.remove('d-none');
+                
+                setTimeout(() => {
+                    alertDiv.classList.add('d-none');
+                }, 3000);
+            }
+        });
+    </script>
 </body>
 </html>
