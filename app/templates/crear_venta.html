@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Nueva Venta</h1>
+<form method="post" id="ventaForm">
+    <div class="form-group">
+        <label for="id_cliente">Cliente</label>
+        <select name="id_cliente" id="id_cliente" class="form-control" required>
+            <option value="">Seleccione un cliente</option>
+            {% for cliente in clientes %}
+            <option value="{{ cliente.id_cliente }}">{{ cliente.nombre }} {{ cliente.apellido }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="metodo_pago">Método de Pago</label>
+        <select name="metodo_pago" id="metodo_pago" class="form-control">
+            <option value="efectivo">Efectivo</option>
+            <option value="tarjeta">Tarjeta</option>
+            <option value="transferencia">Transferencia</option>
+            <option value="otros">Otros</option>
+        </select>
+    </div>
+    <h3>Libros</h3>
+    <div class="mb-3">
+        <input type="text" id="filtro_libro" class="form-control mb-2" placeholder="Buscar libro por título o autor..." onkeyup="filtrarLibros()">
+        <table class="table table-sm table-hover" id="tabla_libros">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Autor</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Cantidad</th>
+                    <th>Agregar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for libro in libros %}
+                <tr data-titulo="{{ libro.titulo|lower }}" data-autor="{{ libro.autor|lower }}">
+                    <td>{{ libro.titulo }}</td>
+                    <td>{{ libro.autor }}</td>
+                    <td>{{ libro.precio }}</td>
+                    <td>{{ libro.stock }}</td>
+                    <td><input type="number" min="1" max="{{ libro.stock }}" class="form-control form-control-sm" id="cantidad_{{ libro.id_libro }}" style="width:80px;"></td>
+                    <td><button type="button" class="btn btn-primary btn-sm" onclick="agregarDetalleTabla({{ libro.id_libro }}, '{{ libro.titulo|replace("'", "\\'") }}', '{{ libro.autor|replace("'", "\\'") }}', {{ libro.precio }}, {{ libro.stock }})">Agregar</button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <table class="table table-bordered" id="detalles_table">
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Autor</th>
+                <th>Precio</th>
+                <th>Cantidad</th>
+                <th>Subtotal</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <input type="hidden" name="detalles_json" id="detalles_json">
+    <button type="submit" class="btn btn-success">Registrar Venta</button>
+    <a href="{{ url_for('ventas.listar_ventas') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+<script>
+let detalles = [];
+function agregarDetalleTabla(id_libro, titulo, autor, precio, stock) {
+    const cantidadInput = document.getElementById('cantidad_' + id_libro);
+    const cantidad = parseInt(cantidadInput.value);
+    if (!cantidad || cantidad < 1 || cantidad > stock) {
+        alert('Ingrese una cantidad válida para ' + titulo);
+        return;
+    }
+    if (detalles.some(d => d.id_libro == id_libro)) {
+        alert('Este libro ya fue agregado.');
+        return;
+    }
+    const subtotal = precio * cantidad;
+    detalles.push({id_libro, titulo, autor, precio, cantidad, subtotal});
+    renderDetalles();
+    cantidadInput.value = '';
+}
+function eliminarDetalle(idx) {
+    detalles.splice(idx, 1);
+    renderDetalles();
+}
+function renderDetalles() {
+    const tbody = document.querySelector('#detalles_table tbody');
+    tbody.innerHTML = '';
+    detalles.forEach((d, i) => {
+        tbody.innerHTML += `<tr>
+            <td><input type='hidden' name='id_libro_${i}' value='${d.id_libro}'>${d.titulo}</td>
+            <td>${d.autor}</td>
+            <td>${d.precio}</td>
+            <td><input type='hidden' name='cantidad_${i}' value='${d.cantidad}'>${d.cantidad}</td>
+            <td>${d.subtotal.toFixed(2)}</td>
+            <td><button type='button' class='btn btn-danger btn-sm' onclick='eliminarDetalle(${i})'>Eliminar</button></td>
+        </tr>`;
+    });
+    document.getElementById('detalles_json').value = JSON.stringify(detalles);
+}
+function filtrarLibros() {
+    const filtro = document.getElementById('filtro_libro').value.toLowerCase();
+    const filas = document.querySelectorAll('#tabla_libros tbody tr');
+    filas.forEach(fila => {
+        const titulo = fila.getAttribute('data-titulo');
+        const autor = fila.getAttribute('data-autor');
+        if (titulo.includes(filtro) || autor.includes(filtro)) {
+            fila.style.display = '';
+        } else {
+            fila.style.display = 'none';
+        }
+    });
+}
+document.getElementById('ventaForm').onsubmit = function() {
+    if (detalles.length === 0) {
+        alert('Debe agregar al menos un libro.');
+        return false;
+    }
+    return true;
+}
+</script>
+{% endblock %}

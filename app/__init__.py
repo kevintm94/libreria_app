@@ -15,11 +15,15 @@ def create_app():
     login_manager.init_app(app)
     
     admin.init_app(app)
-    from .models import Usuario
+    from .models import Usuario, Cliente
     from .admin import configuracion_admin
     from .auth import auth_bp
     from .libros import libros_bp
+    from .clientes import clientes_bp
+    from .ventas import ventas_bp
     configuracion_admin()
     app.register_blueprint(auth_bp)
     app.register_blueprint(libros_bp)
+    app.register_blueprint(clientes_bp)
+    app.register_blueprint(ventas_bp)
     return app

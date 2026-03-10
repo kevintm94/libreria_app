@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Gestión de Clientes - Librería{% endblock %}
+{% block content %}
+    <div class="container" style="max-width:1000px;">
+        <h1>📋 Gestión de Clientes</h1>
+        <form method="GET" class="search-bar d-flex gap-2 mb-3">
+            <input type="text" name="busqueda" placeholder="Buscar por nombre, apellido o email..." value="{{ busqueda }}" class="form-control">
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </form>
+        <a href="{{ url_for('clientes.crear_cliente') }}" class="btn btn-success mb-3">+ Agregar Nuevo Cliente</a>
+        {% if clientes %}
+        <table class="table table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Dirección</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cliente in clientes %}
+                <tr>
+                    <td>{{ cliente.id_cliente }}</td>
+                    <td>{{ cliente.nombre }}</td>
+                    <td>{{ cliente.apellido }}</td>
+                    <td>{{ cliente.email }}</td>
+                    <td>{{ cliente.telefono or 'N/A' }}</td>
+                    <td>{{ cliente.direccion[:50] + '...' if cliente.direccion and cliente.direccion|length > 50 else cliente.direccion or 'N/A' }}</td>
+                    <td>
+                        <a href="{{ url_for('clientes.editar_cliente', id=cliente.id_cliente) }}" class="btn btn-warning btn-sm">✏️ Editar</a>
+                        <form method="POST" action="{{ url_for('clientes.eliminar_cliente', id=cliente.id_cliente) }}" style="display:inline;">
+                            <button type="submit" class="btn-eliminar" onclick="return confirm('¿Estás seguro de que deseas eliminar este cliente?')">🗑️ Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="sin-clientes">
+            <p>No hay clientes registrados. <a href="{{ url_for('clientes.crear_cliente') }}">Crear primero cliente</a></p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
