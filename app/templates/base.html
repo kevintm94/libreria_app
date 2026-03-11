@@ -14,9 +14,13 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
+                {% if current_user.rol in ['admin', 'gerente'] %}
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('clientes.listar_clientes') }}">Clientes</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('libros.listar_libros') }}">Libros</a></li>
+                {% endif %}
+                {% if current_user.rol in ['admin', 'gerente', 'vendedor'] %}
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('ventas.listar_ventas') }}">Ventas</a></li>
+                {% endif %}
                 <li class="nav-item"><a class="nav-link" href="/logout">Cerrar Sesion</a></li>
             </ul>
         </div>
