@@ -4,29 +4,211 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Librería{% endblock %}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons (¡ESTO ES LO QUE FALTA!) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Fuente opcional para mejor tipografía -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-        <a class="navbar-brand" href="/admin">Librería</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-                {% if current_user.rol in ['admin', 'gerente'] %}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('clientes.listar_clientes') }}">Clientes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('libros.listar_libros') }}">Libros</a></li>
-                {% endif %}
-                {% if current_user.rol in ['admin', 'gerente', 'vendedor'] %}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('ventas.listar_ventas') }}">Ventas</a></li>
-                {% endif %}
-                <li class="nav-item"><a class="nav-link" href="/logout">Cerrar Sesion</a></li>
-            </ul>
+    <!-- Navbar mejorado con íconos de Bootstrap Icons -->
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4" style="background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+        <div class="container-fluid">
+            <!-- Logo y marca -->
+            <a class="navbar-brand d-flex align-items-center" href="/admin">
+                <i class="bi bi-book-half me-2" style="color: #ffd700; font-size: 1.8rem;"></i>
+                <span style="font-weight: 700; letter-spacing: 1px;">Librería Librito</span>
+            </a>
+            
+            <!-- Botón hamburguesa para móvil (CORREGIDO: data-bs-toggle) -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Menú principal -->
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center px-3 {% if request.endpoint == 'ventas.dashboard' %}active{% endif %}" 
+                        href="{{ url_for('ventas.dashboard') }}">
+                            <i class="bi bi-bar-chart-fill me-2"></i>Dashboard
+                        </a>
+                    </li>
+                    {% if current_user.rol in ['admin', 'gerente'] %}
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center px-3" href="{{ url_for('clientes.listar_clientes') }}">
+                            <i class="bi bi-people me-2"></i>Clientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center px-3" href="{{ url_for('libros.listar_libros') }}">
+                            <i class="bi bi-book me-2"></i>Libros
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% if current_user.rol in ['admin', 'gerente', 'vendedor'] %}
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center px-3" href="{{ url_for('ventas.listar_ventas') }}">
+                            <i class="bi bi-cart me-2"></i>Ventas
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center px-3" href="/chatbot">
+                            <i class="bi bi-robot me-2"></i>Chatbot
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Sección derecha -->
+                <div class="d-flex align-items-center">
+                    <!-- Información del usuario -->
+                    <div class="me-3 d-none d-lg-block">
+                        <div class="d-flex align-items-center">
+                            <div class="text-end me-2">
+                                <div style="font-size: 0.8rem; color: #ccc;">{{ current_user.rol|capitalize }}</div>
+                                <div style="font-size: 0.9rem; color: #fff; font-weight: 500;">{{ current_user.nombre_completo }}</div>
+                            </div>
+                            <div style="width: 35px; height: 35px; background: rgba(255,215,0,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-person-circle" style="color: #ffd700; font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botón de logout como ícono SOLAMENTE (AHORA CON BOOTSTRAP ICONS) -->
+                    <a href="/logout" class="btn-logout" title="Cerrar sesión">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
         </div>
     </nav>
+
+    <!-- Estilos adicionales (se mantienen igual) -->
+    <style>
+        .navbar {
+            padding: 0.8rem 1.5rem;
+            border-bottom: 1px solid #333;
+        }
+        
+        .navbar-nav .nav-link {
+            color: #e0e0e0 !important;
+            font-weight: 500;
+            padding: 0.6rem 1.2rem;
+            margin: 0 0.2rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .navbar-nav .nav-link:hover {
+            color: #fff !important;
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-1px);
+        }
+        
+        .navbar-nav .nav-link i {
+            transition: transform 0.3s ease;
+        }
+        
+        .navbar-nav .nav-link:hover i {
+            transform: scale(1.1);
+            color: #ffd700;
+        }
+        
+        /* Botón de logout - SOLO ÍCONO */
+        .btn-logout {
+            background: transparent;
+            border: none;
+            color: #e0e0e0;
+            font-size: 1.6rem;
+            padding: 0.5rem 0.8rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            position: relative;
+            margin-left: 0.5rem;
+        }
+        
+        .btn-logout:hover {
+            color: #ff4444;
+            background: rgba(255,68,68,0.1);
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        /* Tooltip personalizado */
+        .btn-logout::after {
+            content: attr(title);
+            position: absolute;
+            bottom: -35px;
+            right: 0;
+            background: #000;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid #333;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        
+        .btn-logout:hover::after {
+            opacity: 1;
+            visibility: visible;
+            bottom: -40px;
+        }
+        
+        /* Efecto hover en el logo */
+        .navbar-brand:hover i {
+            filter: drop-shadow(0 0 8px rgba(255,215,0,0.5));
+            transform: rotate(-5deg);
+            transition: all 0.3s ease;
+        }
+        
+        /* Responsive */
+        @media (max-width: 991px) {
+            .navbar {
+                padding: 0.5rem 1rem;
+            }
+            
+            .btn-logout {
+                margin: 0.5rem 0 0 0;
+                justify-content: flex-start;
+                width: fit-content;
+            }
+            
+            .btn-logout::after {
+                left: 40px;
+                right: auto;
+            }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: rotate(0); }
+            25% { transform: rotate(10deg); }
+            75% { transform: rotate(-10deg); }
+        }
+        
+        .btn-logout:hover i {
+            animation: shake 0.3s ease;
+        }
+    </style>
     <div class="container">
         {% block content %}{% endblock %}
     </div>
+    <!-- Bootstrap 5 JavaScript (necesario para el menú hamburguesa) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

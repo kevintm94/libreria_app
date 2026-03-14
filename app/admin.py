@@ -5,7 +5,7 @@ from wtforms import PasswordField
 from wtforms.validators import DataRequired, Length
 from flask_admin.base import MenuLink  # <-- CORRECTO
 from .extensions import admin, db
-from .models import Usuario, Producto, Libro, Cliente, Venta
+from .models import Usuario, Libro, Cliente, Venta
 class SecurityModelView(ModelView):
     def is_accessible(self):
         return current_user.is_authenticated
@@ -59,4 +59,6 @@ def configuracion_admin():
     admin.add_link(MenuLink(name="📚 Libros", url="/libros"))
     admin.add_link(MenuLink(name="👥 Clientes", url="/clientes"))
     admin.add_link(MenuLink(name="💰 Ventas", url="/ventas"))
+    admin.add_link(MenuLink(name='🤖 Asistente IA', url='/chatbot'))
     admin.add_link(MenuLink(name='Cerrar Sesión', url="/logout"))
+    

@@ -295,45 +295,5 @@
             2026 Librería Librito - Todos los derechos reservados
         </div>
     </div>
-
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-zD9k8n5nR8e0HdsI5f5r5Q5F5f5r5Q5F5r5Q5F5f5r5Q5" crossorigin="anonymous"></script>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const togglePassword = document.getElementById('togglePassword');
-            const passwordInput = document.getElementById('contrasenia');
-            
-            togglePassword.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                
-                const icon = this.querySelector('i');
-                icon.classList.toggle('bi-eye');
-                icon.classList.toggle('bi-eye-slash');
-            });
-
-            const loginForm = document.getElementById('loginForm');
-            loginForm.addEventListener('submit', function(e) {
-                const username = document.getElementById('nombreusuario').value.trim();
-                const password = document.getElementById('contrasenia').value.trim();
-                
-                if (username === '' || password === '') {
-                    e.preventDefault();
-                    showAlert('Por favor completa todos los campos');
-                }
-            });
-
-            function showAlert(message) {
-                const alertDiv = document.getElementById('alertMessage');
-                alertDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${message}`;
-                alertDiv.classList.remove('d-none');
-                
-                setTimeout(() => {
-                    alertDiv.classList.add('d-none');
-                }, 3000);
-            }
-        });
-    </script>
 </body>
 </html>

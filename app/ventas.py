@@ -65,3 +65,52 @@ def crear_venta():
 def detalle_venta(id_venta):
     venta = Venta.query.get_or_404(id_venta)
     return render_template("detalle_venta.html", venta=venta)
+
+@ventas_bp.route('/dashboard')
+@login_required
+def dashboard():
+    """Dashboard con gráficas de ventas y stock (datos mockup)"""
+    
+    # Solo admin y gerente pueden ver el dashboard
+    if current_user.rol not in ['admin', 'gerente']:
+        flash('No tienes permiso para acceder al dashboard', 'danger')
+        return redirect(url_for('ventas.listar_ventas'))
+    
+    # ============================================
+    # DATOS MOCKUP (SIMULADOS - PARA DISEÑO)
+    # ============================================
+    
+    # Datos para gráfica de ventas (últimos 7 días)
+    dias_semana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+    ventas_semana = [450000, 520000, 380000, 610000, 720000, 890000, 950000]
+    
+    # Datos para gráfica de stock por género
+    generos = ['Ficción', 'No Ficción', 'Ciencia', 'Infantil', 'Poesía', 'Técnico']
+    stock_generos = [120, 85, 45, 70, 30, 55]
+    
+    # KPIs simulados
+    kpis = {
+        'ventas_hoy': 125000,
+        'ventas_semana': 4520000,
+        'ventas_mes': 18500000,
+        'libros_vendidos': 342,
+        'stock_total': 405,
+        'clientes_nuevos': 28
+    }
+    
+    # Libros más vendidos (simulado)
+    top_libros = [
+        {'titulo': 'Cien Años de Soledad', 'ventas': 45, 'stock': 12},
+        {'titulo': '1984', 'ventas': 38, 'stock': 8},
+        {'titulo': 'El Principito', 'ventas': 32, 'stock': 15},
+        {'titulo': 'Harry Potter y la Piedra Filosofal', 'ventas': 28, 'stock': 20},
+        {'titulo': 'Don Quijote de la Mancha', 'ventas': 22, 'stock': 7}
+    ]
+    
+    return render_template('dashboard.html',
+                          dias_semana=dias_semana,
+                          ventas_semana=ventas_semana,
+                          generos=generos,
+                          stock_generos=stock_generos,
+                          kpis=kpis,
+                          top_libros=top_libros)

@@ -1,0 +1,649 @@
+<!-- app/templates/dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Librería Librito{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js para gráficas -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+    .kpi-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+        min-height: 300px;
+        margin: 10px 0;
+    }
+    canvas {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 300px;
+    }
+    .gold-accent {
+        color: #ffd700;
+    }
+    .bg-gold-soft {
+        background-color: rgba(255, 215, 0, 0.1);
+    }
+    .spin {
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    /* Estilo para el contenedor de las cards */
+    .card {
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    .card-header {
+        background-color: #fff;
+        border-bottom: 2px solid #ffd700;
+    }
+    /* Asegurar que los canvas sean visibles */
+    #ventasSemanaChart, #stockGeneroChart {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 5px;
+    }
+    #ventasSemanaChart, #stockGeneroChart {
+        display: block !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 300px !important;
+        background-color: #ffffff;
+        border-radius: 8px;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px !important;
+        width: 100% !important;
+        min-height: 300px !important;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px;
+    }
+    
+    /* Forzar dimensiones en el elemento canvas directamente */
+    canvas {
+        overflow-clip-margin: content-box;
+        overflow: clip;
+        width: 100% !important;
+        height: 100% !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Elementos ocultos para pasar datos a JavaScript -->
+<div id="datos-dashboard" 
+     data-dias-semana='{{ dias_semana|tojson }}'
+     data-ventas-semana='{{ ventas_semana|tojson }}'
+     data-generos='{{ generos|tojson }}'
+     data-stock-generos='{{ stock_generos|tojson }}'
+     style="display: none;">
+</div>
+
+<div class="container-fluid mt-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold">
+                <i class="bi bi-bar-chart-fill me-2 gold-accent"></i>
+                Dashboard
+            </h2>
+            <p class="text-muted">
+                <i class="bi bi-calendar me-2"></i>
+                <span id="fecha-actual"></span>
+            </p>
+        </div>
+        <div>
+            <button class="btn btn-outline-dark" id="refreshData">
+                <i class="bi bi-arrow-repeat me-2"></i>Actualizar
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card kpi-card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small text-uppercase">Ventas Hoy</span>
+                            <h3 class="fw-bold mt-2">${{ "{:,.0f}".format(kpis.ventas_hoy) }}</h3>
+                            <span class="text-success small">
+                                <i class="bi bi-arrow-up"></i> +12% vs ayer
+                            </span>
+                        </div>
+                        <div class="bg-gold-soft p-3 rounded-circle">
+                            <i class="bi bi-cash-stack gold-accent fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card kpi-card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small text-uppercase">Ventas Semana</span>
+                            <h3 class="fw-bold mt-2">${{ "{:,.0f}".format(kpis.ventas_semana) }}</h3>
+                            <span class="text-success small">
+                                <i class="bi bi-arrow-up"></i> +5% vs semana ant.
+                            </span>
+                        </div>
+                        <div class="bg-gold-soft p-3 rounded-circle">
+                            <i class="bi bi-graph-up gold-accent fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card kpi-card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small text-uppercase">Libros Vendidos</span>
+                            <h3 class="fw-bold mt-2">{{ kpis.libros_vendidos }}</h3>
+                            <span class="text-muted small">Stock: {{ kpis.stock_total }}</span>
+                        </div>
+                        <div class="bg-gold-soft p-3 rounded-circle">
+                            <i class="bi bi-book gold-accent fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card kpi-card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small text-uppercase">Clientes Nuevos</span>
+                            <h3 class="fw-bold mt-2">{{ kpis.clientes_nuevos }}</h3>
+                            <span class="text-warning small">
+                                <i class="bi bi-star-fill"></i> Este mes
+                            </span>
+                        </div>
+                        <div class="bg-gold-soft p-3 rounded-circle">
+                            <i class="bi bi-people gold-accent fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficas principales -->
+    <div class="row mb-4">
+        <!-- Gráfica de Ventas Semanales -->
+        <div class="col-md-8 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold">
+                        <i class="bi bi-calendar-week me-2 gold-accent"></i>
+                        Ventas de la Semana
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="ventasSemanaChart" 
+                                style="display: block; width: 100%; height: 100%; min-height: 300px;"
+                                width="800" 
+                                height="300">
+                        </canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfica de Stock por Género -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold">
+                        <i class="bi bi-pie-chart me-2 gold-accent"></i>
+                        Stock por Género
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="stockGeneroChart" 
+                                style="display: block; width: 100%; height: 100%; min-height: 300px;"
+                                width="400" 
+                                height="300">
+                        </canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de libros más vendidos -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold">
+                        <i class="bi bi-trophy me-2 gold-accent"></i>
+                        Libros Más Vendidos
+                    </h5>
+                    <span class="badge bg-dark">Top 5</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Título</th>
+                                    <th>Ventas</th>
+                                    <th>Stock</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for libro in top_libros %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td class="fw-bold">{{ libro.titulo }}</td>
+                                    <td>{{ libro.ventas }} und.</td>
+                                    <td>{{ libro.stock }} und.</td>
+                                    <td>
+                                        {% if libro.stock > 10 %}
+                                        <span class="badge bg-success">Buen stock</span>
+                                        {% elif libro.stock > 5 %}
+                                        <span class="badge bg-warning text-dark">Stock medio</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Stock bajo</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Obtener datos de los atributos data
+    const datosDiv = document.getElementById('datos-dashboard');
+    
+    // Parsear los datos JSON
+    let diasSemana = [];
+    let ventasSemana = [];
+    let generos = [];
+    let stockGeneros = [];
+    
+    try {
+        diasSemana = JSON.parse(datosDiv?.dataset.diasSemana || '["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]');
+        ventasSemana = JSON.parse(datosDiv?.dataset.ventasSemana || '[450000,520000,380000,610000,720000,890000,950000]');
+        generos = JSON.parse(datosDiv?.dataset.generos || '["Ficción","No Ficción","Ciencia","Infantil"]');
+        stockGeneros = JSON.parse(datosDiv?.dataset.stockGeneros || '[120,85,45,70]');
+    } catch (e) {
+        console.error('Error parseando datos:', e);
+        // Datos de respaldo
+        diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+        ventasSemana = [450000, 520000, 380000, 610000, 720000, 890000, 950000];
+        generos = ['Ficción', 'No Ficción', 'Ciencia', 'Infantil'];
+        stockGeneros = [120, 85, 45, 70];
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Iniciando gráficas...');
+        
+        // Fecha actual
+        const fecha = new Date();
+        const opciones = { year: 'numeric', month: 'long', day: 'numeric' };
+        const fechaSpan = document.getElementById('fecha-actual');
+        if (fechaSpan) {
+            fechaSpan.textContent = fecha.toLocaleDateString('es-ES', opciones);
+        }
+
+        // ============================================
+        // GRÁFICA DE VENTAS - CONFIGURACIÓN ESPECÍFICA
+        // ============================================
+        const canvasVentas = document.getElementById('ventasSemanaChart');
+        if (canvasVentas) {
+            console.log('Creando gráfica de ventas...');
+            
+            // Forzar dimensiones
+            canvasVentas.style.width = '100%';
+            canvasVentas.style.height = '300px';
+            canvasVentas.width = canvasVentas.offsetWidth || 800;
+            canvasVentas.height = 300;
+            
+            const ctxVentas = canvasVentas.getContext('2d');
+            
+            // Limpiar cualquier gráfica anterior
+            if (window.ventasChart) {
+                window.ventasChart.destroy();
+            }
+            
+            window.ventasChart = new Chart(ctxVentas, {
+                type: 'line',
+                data: {
+                    labels: diasSemana,
+                    datasets: [{
+                        label: 'Ventas ($)',
+                        data: ventasSemana,
+                        borderColor: '#ffd700',
+                        backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: '#000000',
+                        pointBorderColor: '#ffd700',
+                        pointBorderWidth: 2,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '$ ' + context.parsed.y.toLocaleString('es-CO');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString('es-CO');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            console.log('Gráfica de ventas creada');
+        } else {
+            console.error('Canvas de ventas no encontrado');
+        }
+
+        // ============================================
+        // GRÁFICA DE STOCK
+        // ============================================
+        const canvasStock = document.getElementById('stockGeneroChart');
+        if (canvasStock) {
+            console.log('Creando gráfica de stock...');
+            
+            // Forzar dimensiones
+            canvasStock.style.width = '100%';
+            canvasStock.style.height = '300px';
+            canvasStock.width = canvasStock.offsetWidth || 400;
+            canvasStock.height = 300;
+            
+            const ctxStock = canvasStock.getContext('2d');
+            
+            // Limpiar cualquier gráfica anterior
+            if (window.stockChart) {
+                window.stockChart.destroy();
+            }
+            
+            window.stockChart = new Chart(ctxStock, {
+                type: 'doughnut',
+                data: {
+                    labels: generos,
+                    datasets: [{
+                        data: stockGeneros,
+                        backgroundColor: [
+                            '#ffd700',
+                            '#000000',
+                            '#333333',
+                            '#666666',
+                            '#999999',
+                            '#cccccc'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { boxWidth: 12, font: { size: 11 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed + ' libros';
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+            console.log('Gráfica de stock creada');
+        } else {
+            console.error('Canvas de stock no encontrado');
+        }
+
+        // Botón de actualizar
+        const refreshBtn = document.getElementById('refreshData');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                const btn = this;
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-arrow-repeat me-2 spin"></i>Actualizando...';
+                btn.disabled = true;
+                
+                setTimeout(function() {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                    
+                    alert('Datos actualizados (modo demostración)');
+                }, 1500);
+            });
+        }
+    });
+    function initCharts() {
+        console.log('Inicializando gráficas...');
+        
+        // Obtener datos
+        const datosDiv = document.getElementById('datos-dashboard');
+        let diasSemana = JSON.parse(datosDiv?.dataset.diasSemana || '["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]');
+        let ventasSemana = JSON.parse(datosDiv?.dataset.ventasSemana || '[450000,520000,380000,610000,720000,890000,950000]');
+        let generos = JSON.parse(datosDiv?.dataset.generos || '["Ficción","No Ficción","Ciencia","Infantil","Poesía","Técnico"]');
+        let stockGeneros = JSON.parse(datosDiv?.dataset.stockGeneros || '[120,85,45,70,30,55]');
+
+        // ============================================
+        // GRÁFICA DE VENTAS
+        // ============================================
+        const canvasVentas = document.getElementById('ventasSemanaChart');
+        if (canvasVentas) {
+            console.log('Configurando canvas de ventas');
+            
+            // Forzar dimensiones
+            canvasVentas.style.width = '100%';
+            canvasVentas.style.height = '300px';
+            canvasVentas.width = canvasVentas.clientWidth || 800;
+            canvasVentas.height = 300;
+            
+            const ctxVentas = canvasVentas.getContext('2d');
+            
+            // Destruir gráfica anterior si existe
+            if (window.ventasChart) {
+                window.ventasChart.destroy();
+            }
+            
+            window.ventasChart = new Chart(ctxVentas, {
+                type: 'line',
+                data: {
+                    labels: diasSemana,
+                    datasets: [{
+                        label: 'Ventas ($)',
+                        data: ventasSemana,
+                        borderColor: '#ffd700',
+                        backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: '#000000',
+                        pointBorderColor: '#ffd700',
+                        pointBorderWidth: 2,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '$ ' + context.parsed.y.toLocaleString('es-CO');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString('es-CO');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            console.log('Gráfica de ventas creada');
+        }
+
+        // ============================================
+        // GRÁFICA DE STOCK
+        // ============================================
+        const canvasStock = document.getElementById('stockGeneroChart');
+        if (canvasStock) {
+            console.log('Configurando canvas de stock');
+            
+            // Forzar dimensiones
+            canvasStock.style.width = '100%';
+            canvasStock.style.height = '300px';
+            canvasStock.width = canvasStock.clientWidth || 400;
+            canvasStock.height = 300;
+            
+            const ctxStock = canvasStock.getContext('2d');
+            
+            // Destruir gráfica anterior si existe
+            if (window.stockChart) {
+                window.stockChart.destroy();
+            }
+            
+            window.stockChart = new Chart(ctxStock, {
+                type: 'doughnut',
+                data: {
+                    labels: generos,
+                    datasets: [{
+                        data: stockGeneros,
+                        backgroundColor: [
+                            '#ffd700',
+                            '#000000',
+                            '#333333',
+                            '#666666',
+                            '#999999',
+                            '#cccccc'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { boxWidth: 12, font: { size: 11 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed + ' libros';
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+            console.log('Gráfica de stock creada');
+        }
+    }
+
+    // Esperar a que el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM cargado, esperando un momento...');
+        
+        // Pequeño retraso para asegurar que todo está renderizado
+        setTimeout(initCharts, 100);
+        
+        // Fecha actual
+        const fecha = new Date();
+        const opciones = { year: 'numeric', month: 'long', day: 'numeric' };
+        const fechaSpan = document.getElementById('fecha-actual');
+        if (fechaSpan) {
+            fechaSpan.textContent = fecha.toLocaleDateString('es-ES', opciones);
+        }
+        
+        // Botón de actualizar
+        const refreshBtn = document.getElementById('refreshData');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                const btn = this;
+                btn.innerHTML = '<i class="bi bi-arrow-repeat me-2 spin"></i>Actualizando...';
+                btn.disabled = true;
+                
+                setTimeout(function() {
+                    btn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Actualizar';
+                    btn.disabled = false;
+                    alert('Datos actualizados (modo demostración)');
+                }, 1500);
+            });
+        }
+    });
+</script>
+{% endblock %}

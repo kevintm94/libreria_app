@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Gestión de Clientes - Librería{% endblock %}
 {% block content %}
-    <div class="container" style="max-width:1000px;">
         <h1>📋 Gestión de Clientes</h1>
         <form method="GET" class="search-bar d-flex gap-2 mb-3">
             <input type="text" name="busqueda" placeholder="Buscar por nombre, apellido o email..." value="{{ busqueda }}" class="form-control">
@@ -45,5 +44,4 @@
             <p>No hay clientes registrados. <a href="{{ url_for('clientes.crear_cliente') }}">Crear primero cliente</a></p>
         </div>
         {% endif %}
-    </div>
 {% endblock %}
