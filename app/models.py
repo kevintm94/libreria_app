@@ -20,15 +20,15 @@ class Usuario(db.Model, UserMixin):
     def get_id(self):
         return self.id_usuario
     
-class Producto(db.Model):
-    id = db.Column(db.Integer, primary_key = True)
-    nombre = db.Column(db.String(150), nullable = False)
-    descripcion = db.Column(db.Text, nullable = False)
-    precio = db.Column(db.Float, nullable = False)
-    stock = db.Column(db.Integer, nullable = False)
+#class Producto(db.Model):
+#    id = db.Column(db.Integer, primary_key = True)
+#    nombre = db.Column(db.String(150), nullable = False)
+#    descripcion = db.Column(db.Text, nullable = False)
+#    precio = db.Column(db.Float, nullable = False)
+#    stock = db.Column(db.Integer, nullable = False)
 
-    def __repr__(self):
-        return self.nombre
+#    def __repr__(self):
+#        return self.nombre
 
 class Libro(db.Model):
     id_libro = db.Column(db.Integer, primary_key=True, autoincrement=True)

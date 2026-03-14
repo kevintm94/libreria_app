@@ -1,6 +1,6 @@
 from  flask import Blueprint, redirect, url_for, render_template, request
 from flask_login import login_required, login_user, logout_user
-from .models import Usuario, Producto
+from .models import Usuario
 from  .extensions import login_manager
 auth_bp = Blueprint("auth", __name__)
 
@@ -21,7 +21,7 @@ def login():
         
         if usuario and usuario.check_password(request.form.get("contrasenia")):
             login_user(usuario)
-            return redirect("/admin")
+            return redirect("/dashboard")
     
     return render_template("login.html")
 @login_required
@@ -30,7 +30,7 @@ def logout():
     logout_user()
     return redirect(url_for("auth.login"))
 
-@auth_bp.route("/productos")
-def productos():
-    lista_productos = Producto.query.all()
-    return render_template("productos.html", productos = lista_productos)
+#@auth_bp.route("/productos")
+#def productos():
+#    lista_productos = Producto.query.all()
+#    return render_template("productos.html", productos = lista_productos)

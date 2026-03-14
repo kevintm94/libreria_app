@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}Asistente Virtual - Librería Librito{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-robot fs-4 me-2"></i>
+                        <span class="h5 mb-0">Asistente Virtual con IA</span>
+                        <span class="badge bg-info ms-2">{{ usuario.rol|capitalize }}</span>
+                    </div>
+                    <div>
+                        <span class="badge bg-success" id="statusBadge">
+                            <i class="bi bi-circle-fill me-1" style="font-size: 0.6rem;"></i>
+                            Conectado
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-body p-0">
+                    <!-- Selector de modo -->
+                    <div class="bg-light p-2 border-bottom">
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" class="btn btn-outline-primary active" id="modeChatBtn">
+                                <i class="bi bi-chat-dots me-2"></i>Modo Chat
+                                <small class="d-block small text-muted">Conversación general</small>
+                            </button>
+                            {% if usuario.rol in ['admin', 'gerente'] %}
+                            <button type="button" class="btn btn-outline-success" id="modeDBBtn">
+                                <i class="bi bi-database me-2"></i>Modo Base de Datos
+                                <small class="d-block small text-muted">Consultar stock, ventas...</small>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Área de mensajes -->
+                    <div class="chat-messages p-3" id="chatMessages" style="height: 400px; overflow-y: auto; background: #f8f9fa;">
+                        <div class="message bot mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-secondary text-white rounded-circle p-2 me-2">
+                                    <i class="bi bi-robot"></i>
+                                </div>
+                                <div class="bg-white rounded p-3 shadow-sm" style="max-width: 80%;">
+                                    <strong>Asistente Librería Librito</strong>
+                                    <p class="mb-1 mt-1">¡Hola <strong>{{ usuario.nombre_completo }}</strong>! Soy tu asistente virtual. Puedo ayudarte con:</p>
+                                    <ul class="mb-0 small">
+                                        <li>📚 Recomendaciones de libros</li>
+                                        <li>📖 Información sobre autores y géneros</li>
+                                        {% if usuario.rol in ['admin', 'gerente'] %}
+                                        <li>📊 Consultas de stock y ventas (Modo BD)</li>
+                                        <li>👥 Información de clientes</li>
+                                        {% endif %}
+                                    </ul>
+                                    <span class="text-muted small mt-2 d-block">
+                                        <i class="bi bi-clock"></i> ahora
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Área de entrada -->
+                    <div class="border-top p-3 bg-light">
+                        <div class="mb-2" id="modeIndicator">
+                            <span class="badge bg-primary">
+                                <i class="bi bi-chat"></i> Modo Chat activo
+                            </span>
+                            <small class="text-muted ms-2" id="modeDescription">
+                                Pregúntame sobre libros, autores o recomendaciones
+                            </small>
+                        </div>
+                        
+                        <div class="input-group">
+                            <textarea class="form-control" id="userInput" rows="2" 
+                                placeholder="Escribe tu mensaje..."></textarea>
+                            <button class="btn btn-primary" type="button" id="sendButton">
+                                <i class="bi bi-send me-2"></i>Enviar
+                            </button>
+                        </div>
+                        <small class="text-muted mt-2 d-block">
+                            <i class="bi bi-info-circle"></i> 
+                            Presiona Enter para enviar, Shift+Enter para nueva línea
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.message {
+    animation: fadeIn 0.3s;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.sql-info {
+    background: #e9ecef;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 10px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    border-left: 4px solid #007bff;
+}
+.thinking {
+    display: inline-block;
+    padding: 8px 15px;
+    background: #e9ecef;
+    border-radius: 20px;
+}
+.thinking .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #6c757d;
+    margin-right: 4px;
+    animation: bounce 1.4s infinite;
+}
+.thinking .dot:nth-child(2) { animation-delay: 0.2s; }
+.thinking .dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-5px); }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementos del DOM
+    const chatMessages = document.getElementById('chatMessages');
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendButton');
+    const modeChatBtn = document.getElementById('modeChatBtn');
+    const modeDBBtn = document.getElementById('modeDBBtn');
+    const modeIndicator = document.getElementById('modeIndicator');
+    const modeDescription = document.getElementById('modeDescription');
+    
+    let currentMode = 'chat';
+    
+    // Configurar modo Chat
+    if (modeChatBtn) {
+        modeChatBtn.addEventListener('click', function() {
+            currentMode = 'chat';
+            modeChatBtn.classList.add('active');
+            if (modeDBBtn) modeDBBtn.classList.remove('active');
+            modeIndicator.innerHTML = '<span class="badge bg-primary"><i class="bi bi-chat"></i> Modo Chat activo</span>';
+            modeDescription.textContent = 'Pregúntame sobre libros, autores o recomendaciones';
+        });
+    }
+    
+    // Configurar modo BD (solo para admin/gerente)
+    if (modeDBBtn) {
+        modeDBBtn.addEventListener('click', function() {
+            currentMode = 'db';
+            modeDBBtn.classList.add('active');
+            modeChatBtn.classList.remove('active');
+            modeIndicator.innerHTML = '<span class="badge bg-success"><i class="bi bi-database"></i> Modo Base de Datos activo</span>';
+            modeDescription.textContent = 'Consulta stock, ventas, clientes... (ej: "libros con poco stock", "ventas de este mes")';
+        });
+    }
+    
+    // Enviar con Enter (Shift+Enter para nueva línea)
+    userInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    
+    sendButton.addEventListener('click', sendMessage);
+    
+    async function sendMessage() {
+        const message = userInput.value.trim();
+        if (!message) return;
+        
+        // Mostrar mensaje del usuario
+        appendMessage(message, 'user');
+        userInput.value = '';
+        
+        // Mostrar indicador de pensamiento
+        const thinkingId = showThinking();
+        
+        try {
+            const endpoint = currentMode === 'db' ? '/chatbot/ask-db' : '/chatbot/send';
+            
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message: message,
+                    question: message  // para compatibilidad
+                })
+            });
+            
+            const data = await response.json();
+            
+            // Eliminar indicador de pensamiento
+            removeThinking(thinkingId);
+            
+            if (data.error) {
+                appendMessage(`Error: ${data.error}`, 'error');
+                if (data.sql) {
+                    appendSQLInfo(data.sql, 'error');
+                }
+            } else {
+                appendMessage(data.reply, 'bot');
+                if (data.sql) {
+                    appendSQLInfo(data.sql, data.count);
+                }
+            }
+        } catch (error) {
+            removeThinking(thinkingId);
+            appendMessage('Error de conexión. Intenta de nuevo.', 'error');
+        }
+    }
+    
+    function appendMessage(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender} mb-3`;
+        
+        const isUser = sender === 'user';
+        const avatarIcon = isUser ? 'bi-person-circle' : 'bi-robot';
+        const avatarBg = isUser ? 'bg-primary' : 'bg-secondary';
+        const align = isUser ? 'flex-row-reverse' : '';
+        
+        messageDiv.innerHTML = `
+            <div class="d-flex ${align} align-items-start">
+                <div class="${avatarBg} text-white rounded-circle p-2 me-2">
+                    <i class="bi ${avatarIcon}"></i>
+                </div>
+                <div class="bg-white rounded p-3 shadow-sm" style="max-width: 80%;">
+                    <strong>${isUser ? 'Tú' : 'Asistente'}</strong>
+                    <p class="mb-1 mt-1" style="white-space: pre-wrap;">${text.replace(/\n/g, '<br>')}</p>
+                    <span class="text-muted small">
+                        <i class="bi bi-clock"></i> ahora
+                    </span>
+                </div>
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function appendSQLInfo(sql, count) {
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'sql-info';
+        infoDiv.innerHTML = `
+            <i class="bi bi-database"></i> 
+            <strong>Consulta SQL ejecutada</strong>
+            ${count !== undefined ? `<span class="badge bg-info ms-2">${count} resultados</span>` : ''}
+            <pre class="mt-2 mb-0 small"><code>${sql}</code></pre>
+        `;
+        
+        // Añadir al último mensaje del bot
+        const lastMessage = chatMessages.lastElementChild;
+        if (lastMessage && lastMessage.querySelector('.bot')) {
+            const contentDiv = lastMessage.querySelector('.bg-white');
+            if (contentDiv) {
+                contentDiv.appendChild(infoDiv);
+            }
+        }
+    }
+    
+    function showThinking() {
+        const id = 'thinking-' + Date.now();
+        const thinkingDiv = document.createElement('div');
+        thinkingDiv.id = id;
+        thinkingDiv.className = 'message bot mb-3';
+        thinkingDiv.innerHTML = `
+            <div class="d-flex align-items-start">
+                <div class="bg-secondary text-white rounded-circle p-2 me-2">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div class="thinking">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="ms-2">Pensando...</span>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(thinkingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return id;
+    }
+    
+    function removeThinking(id) {
+        const thinking = document.getElementById(id);
+        if (thinking) thinking.remove();
+    }
+    
+    // Autoajustar altura del textarea
+    userInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+});
+</script>
+{% endblock %}
