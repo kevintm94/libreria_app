@@ -1,123 +1,69 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Crear Libro</title>
+{% extends 'base.html' %}
+{% block title %}Crear Libro - Librería{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 700px;">
+    <h1>➕ Crear Nuevo Libro</h1>
+
 {% if error %}
-<p style="color:red; text-align:center;">
-{{ error }}
-</p>
+<div class="alert alert-danger">{{ error }}</div>
 {% endif %}
-<style>
 
-body{
-font-family: Arial;
-background:#f5f5f5;
-margin:40px;
-}
-
-h1{
-text-align:center;
-}
-
-form{
-background:white;
-padding:20px;
-border-radius:8px;
-width:500px;
-margin:auto;
-}
-
-label{
-display:block;
-margin-top:10px;
-}
-
-input, textarea{
-width:100%;
-padding:8px;
-margin-top:5px;
-}
-
-.botones{
-margin-top:20px;
-}
-
-.guardar{
-background:green;
-color:white;
-padding:8px 12px;
-border:none;
-border-radius:4px;
-margin-right:10px;
-cursor:pointer;
-}
-
-.volver{
-background:gray;
-color:white;
-padding:8px 12px;
-text-decoration:none;
-border-radius:4px;
-}
-
-</style>
-
-</head>
-<body>
-
-<h1>➕ Crear Libro</h1>
-
-<form method="POST">
-
-<label>ISBN <span style="color:red">*</span></label>
-<input type="text" name="isbn" maxlength="20" required
-pattern="[0-9\-]{10,20}"
-title="El ISBN debe contener solo números o guiones">
-
-<label>Titulo <span style="color:red">*</span></label>
-<input type="text" name="titulo" maxlength="200" required>
-
-<label>Autor <span style="color:red">*</span></label>
-<input type="text" name="autor" maxlength="100" required>
-
-<label>Editorial</label>
-<input type="text" name="editorial" maxlength="100">
-
-<label>Año de publicación</label>
-<input type="number" name="anio_publicacion" min="1500" max="2026">
-
-<label>Genero</label>
-<input type="text" name="genero" maxlength="50">
-
-<label>Precio <span style="color:red">*</span></label>
-<input type="number" name="precio" step="0.01" min="0.01" required>
-
-<label>Stock</label>
-<input type="number" name="stock" min="0" value="0">
-
-<label>Paginas</label>
-<input type="number" name="paginas" min="1">
-
-<label>Idioma</label>
-<input type="text" name="idioma" maxlength="30" value="Español">
-
-<label>Descripcion</label>
-<textarea name="descripcion"></textarea>
-
-<div class="botones">
-
-<button class="guardar" type="submit">
-Guardar
-</button>
-
-<a class="volver" href="/libros">
-Volver
-</a>
-
+<form method="POST" class="needs-validation" novalidate>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="titulo" class="form-label">Título <span class="text-danger">*</span></label>
+            <input type="text" id="titulo" name="titulo" class="form-control" maxlength="200" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="autor" class="form-label">Autor <span class="text-danger">*</span></label>
+            <input type="text" id="autor" name="autor" class="form-control" maxlength="100" required>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="isbn" class="form-label">ISBN <span class="text-danger">*</span></label>
+            <input type="text" id="isbn" name="isbn" class="form-control" maxlength="20" required pattern="[0-9\-]{10,20}" title="El ISBN debe contener solo números o guiones">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="editorial" class="form-label">Editorial</label>
+            <input type="text" id="editorial" name="editorial" class="form-control" maxlength="100">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label for="precio" class="form-label">Precio <span class="text-danger">*</span></label>
+            <input type="number" id="precio" name="precio" class="form-control" step="0.01" min="0.01" required>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="stock" class="form-label">Stock</label>
+            <input type="number" id="stock" name="stock" class="form-control" min="0" value="0">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="anio_publicacion" class="form-label">Año Publicación</label>
+            <input type="number" id="anio_publicacion" name="anio_publicacion" class="form-control" min="1500" max="2026">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="genero" class="form-label">Género</label>
+            <input type="text" id="genero" name="genero" class="form-control" maxlength="50">
+        </div>
+        <div class="col-md-3 mb-3">
+            <label for="paginas" class="form-label">Páginas</label>
+            <input type="number" name="paginas" class="form-control" min="1">
+        </div>
+        <div class="col-md-3 mb-3">
+            <label for="idioma" class="form-label">Idioma</label>
+            <input type="text" name="idioma" class="form-control" maxlength="30" value="Español">
+        </div>
+    </div>
+    <div class="mb-3">
+        <label for="descripcion" class="form-label">Descripción</label>
+        <textarea id="descripcion" name="descripcion" class="form-control" rows="3"></textarea>
+    </div>
+    <div class="d-flex gap-2 mt-4">
+        <button class="btn btn-success flex-fill" type="submit">💾 Guardar Libro</button>
+        <a class="btn btn-secondary flex-fill" href="{{ url_for('libros.listar_libros') }}">❌ Cancelar</a>
+    </div>
 </div>
-
-</form>
-
-</body>
-</html>
+{% endblock %}

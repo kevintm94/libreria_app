@@ -194,6 +194,22 @@
         </div>
     </div>
 
+    <!-- Botones de Análisis con IA -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold"><i class="bi bi-magic me-2 gold-accent"></i>Análisis con IA</h5>
+                    <span class="badge bg-info">Nuevo</span>
+                </div>
+                <div class="card-body d-flex justify-content-center flex-wrap gap-3">
+                    <button class="btn btn-outline-primary" data-task="ventas_mes"><i class="bi bi-graph-up-arrow me-2"></i>Analizar Ventas del Mes</button>
+                    <button class="btn btn-outline-secondary" data-task="stock_bajo"><i class="bi bi-box-seam me-2"></i>Top Libros Bajo Stock</button>
+                    <button class="btn btn-outline-dark" data-task="perfil_cliente"><i class="bi bi-person-check me-2"></i>Perfil del Cliente Frecuente</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Gráficas principales -->
     <div class="row mb-4">
         <!-- Gráfica de Ventas Semanales -->
@@ -288,66 +304,70 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para Análisis IA -->
+<div class="modal fade" id="iaAnalysisModal" tabindex="-1" aria-labelledby="iaAnalysisModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="iaAnalysisModalLabel">Análisis de IA</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Estado de carga -->
+        <div id="modal-loading-state" class="text-center p-5" style="display: none;">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-3 text-muted">La IA está analizando los datos, por favor espera...</p>
+        </div>
+        <!-- Contenido del análisis -->
+        <div id="modal-content-state" style="display: none;">
+            <div id="ia-analysis-text" class="p-3 bg-light rounded"></div>
+            <div class="chart-container mt-4" style="height: 350px;">
+                <canvas id="iaChartCanvas"></canvas>
+            </div>
+        </div>
+        <!-- Mensaje de error -->
+        <div id="modal-error-state" class="alert alert-danger" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Librería para convertir Markdown a HTML (opcional pero recomendado) -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
-    // Obtener datos de los atributos data
-    const datosDiv = document.getElementById('datos-dashboard');
-    
-    // Parsear los datos JSON
-    let diasSemana = [];
-    let ventasSemana = [];
-    let generos = [];
-    let stockGeneros = [];
-    
-    try {
-        diasSemana = JSON.parse(datosDiv?.dataset.diasSemana || '["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]');
-        ventasSemana = JSON.parse(datosDiv?.dataset.ventasSemana || '[450000,520000,380000,610000,720000,890000,950000]');
-        generos = JSON.parse(datosDiv?.dataset.generos || '["Ficción","No Ficción","Ciencia","Infantil"]');
-        stockGeneros = JSON.parse(datosDiv?.dataset.stockGeneros || '[120,85,45,70]');
-    } catch (e) {
-        console.error('Error parseando datos:', e);
-        // Datos de respaldo
-        diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-        ventasSemana = [450000, 520000, 380000, 610000, 720000, 890000, 950000];
-        generos = ['Ficción', 'No Ficción', 'Ciencia', 'Infantil'];
-        stockGeneros = [120, 85, 45, 70];
-    }
-
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Iniciando gráficas...');
+        // 1. OBTENCIÓN DE DATOS
+        const datosDiv = document.getElementById('datos-dashboard');
+        let diasSemana = [], ventasSemana = [], generos = [], stockGeneros = [];
         
-        // Fecha actual
-        const fecha = new Date();
-        const opciones = { year: 'numeric', month: 'long', day: 'numeric' };
-        const fechaSpan = document.getElementById('fecha-actual');
-        if (fechaSpan) {
-            fechaSpan.textContent = fecha.toLocaleDateString('es-ES', opciones);
+        try {
+            diasSemana = JSON.parse(datosDiv?.dataset.diasSemana || '[]');
+            ventasSemana = JSON.parse(datosDiv?.dataset.ventasSemana || '[]');
+            generos = JSON.parse(datosDiv?.dataset.generos || '[]');
+            stockGeneros = JSON.parse(datosDiv?.dataset.stockGeneros || '[]');
+        } catch (e) {
+            console.error('Error parseando datos:', e);
+            diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+            ventasSemana = [0, 0, 0, 0, 0, 0, 0];
         }
 
-        // ============================================
-        // GRÁFICA DE VENTAS - CONFIGURACIÓN ESPECÍFICA
-        // ============================================
+        // 2. FECHA ACTUAL
+        const fechaSpan = document.getElementById('fecha-actual');
+        if (fechaSpan) {
+            const fecha = new Date();
+            fechaSpan.textContent = fecha.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        // 3. GRÁFICA DE VENTAS
         const canvasVentas = document.getElementById('ventasSemanaChart');
         if (canvasVentas) {
-            console.log('Creando gráfica de ventas...');
-            
-            // Forzar dimensiones
-            canvasVentas.style.width = '100%';
-            canvasVentas.style.height = '300px';
-            canvasVentas.width = canvasVentas.offsetWidth || 800;
-            canvasVentas.height = 300;
-            
-            const ctxVentas = canvasVentas.getContext('2d');
-            
-            // Limpiar cualquier gráfica anterior
-            if (window.ventasChart) {
-                window.ventasChart.destroy();
-            }
-            
-            window.ventasChart = new Chart(ctxVentas, {
+             new Chart(canvasVentas.getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: diasSemana,
@@ -356,109 +376,41 @@
                         data: ventasSemana,
                         borderColor: '#ffd700',
                         backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.3,
-                        fill: true,
-                        pointBackgroundColor: '#000000',
-                        pointBorderColor: '#ffd700',
-                        pointBorderWidth: 2,
-                        pointRadius: 5
+                        borderWidth: 3, tension: 0.3, fill: true,
+                        pointBackgroundColor: '#000000', pointBorderColor: '#ffd700',
+                        pointBorderWidth: 2, pointRadius: 5
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return '$ ' + context.parsed.y.toLocaleString('es-CO');
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                            ticks: {
-                                callback: function(value) {
-                                    return '$' + value.toLocaleString('es-CO');
-                                }
-                            }
-                        }
-                    }
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
                 }
             });
-            console.log('Gráfica de ventas creada');
-        } else {
-            console.error('Canvas de ventas no encontrado');
         }
 
-        // ============================================
-        // GRÁFICA DE STOCK
-        // ============================================
+        // 4. GRÁFICA DE STOCK
         const canvasStock = document.getElementById('stockGeneroChart');
         if (canvasStock) {
-            console.log('Creando gráfica de stock...');
-            
-            // Forzar dimensiones
-            canvasStock.style.width = '100%';
-            canvasStock.style.height = '300px';
-            canvasStock.width = canvasStock.offsetWidth || 400;
-            canvasStock.height = 300;
-            
-            const ctxStock = canvasStock.getContext('2d');
-            
-            // Limpiar cualquier gráfica anterior
-            if (window.stockChart) {
-                window.stockChart.destroy();
-            }
-            
-            window.stockChart = new Chart(ctxStock, {
+            new Chart(canvasStock.getContext('2d'), {
                 type: 'doughnut',
                 data: {
                     labels: generos,
                     datasets: [{
                         data: stockGeneros,
-                        backgroundColor: [
-                            '#ffd700',
-                            '#000000',
-                            '#333333',
-                            '#666666',
-                            '#999999',
-                            '#cccccc'
-                        ],
-                        borderWidth: 0,
-                        hoverOffset: 5
+                        backgroundColor: ['#ffd700', '#000000', '#333333', '#666666', '#999999', '#cccccc'],
+                        borderWidth: 0, hoverOffset: 5
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { 
-                            position: 'bottom',
-                            labels: { boxWidth: 12, font: { size: 11 } }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.label + ': ' + context.parsed + ' libros';
-                                }
-                            }
-                        }
-                    },
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
                     cutout: '60%'
                 }
             });
-            console.log('Gráfica de stock creada');
-        } else {
-            console.error('Canvas de stock no encontrado');
         }
 
-        // Botón de actualizar
+        // 5. BOTÓN REFRESH
         const refreshBtn = document.getElementById('refreshData');
         if (refreshBtn) {
             refreshBtn.addEventListener('click', function() {
@@ -466,182 +418,85 @@
                 const originalHtml = btn.innerHTML;
                 btn.innerHTML = '<i class="bi bi-arrow-repeat me-2 spin"></i>Actualizando...';
                 btn.disabled = true;
-                
-                setTimeout(function() {
+                setTimeout(() => {
                     btn.innerHTML = originalHtml;
                     btn.disabled = false;
+                    alert('Datos actualizados (modo demostración)');
+                }, 1500);
+            });
+        }
+
+        // 6. LÓGICA IA
+        const iaAnalysisModalEl = document.getElementById('iaAnalysisModal');
+        if (iaAnalysisModalEl) {
+            const iaAnalysisModal = new bootstrap.Modal(iaAnalysisModalEl);
+            let iaChart = null;
+
+            document.querySelectorAll('button[data-task]').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const task = this.dataset.task;
+                    const modalTitle = document.getElementById('iaAnalysisModalLabel');
+                    const modalLoading = document.getElementById('modal-loading-state');
+                    const modalContent = document.getElementById('modal-content-state');
+                    const modalError = document.getElementById('modal-error-state');
+                    const analysisTextDiv = document.getElementById('ia-analysis-text');
                     
-                    alert('Datos actualizados (modo demostración)');
-                }, 1500);
-            });
-        }
-    });
-    function initCharts() {
-        console.log('Inicializando gráficas...');
-        
-        // Obtener datos
-        const datosDiv = document.getElementById('datos-dashboard');
-        let diasSemana = JSON.parse(datosDiv?.dataset.diasSemana || '["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]');
-        let ventasSemana = JSON.parse(datosDiv?.dataset.ventasSemana || '[450000,520000,380000,610000,720000,890000,950000]');
-        let generos = JSON.parse(datosDiv?.dataset.generos || '["Ficción","No Ficción","Ciencia","Infantil","Poesía","Técnico"]');
-        let stockGeneros = JSON.parse(datosDiv?.dataset.stockGeneros || '[120,85,45,70,30,55]');
+                    // Reset modal state
+                    modalTitle.textContent = `Análisis IA: ${this.textContent.trim()}`;
+                    modalLoading.style.display = 'block';
+                    modalContent.style.display = 'none';
+                    modalError.style.display = 'none';
+                    analysisTextDiv.innerHTML = '';
+                    if (iaChart) iaChart.destroy();
+                    
+                    iaAnalysisModal.show();
 
-        // ============================================
-        // GRÁFICA DE VENTAS
-        // ============================================
-        const canvasVentas = document.getElementById('ventasSemanaChart');
-        if (canvasVentas) {
-            console.log('Configurando canvas de ventas');
-            
-            // Forzar dimensiones
-            canvasVentas.style.width = '100%';
-            canvasVentas.style.height = '300px';
-            canvasVentas.width = canvasVentas.clientWidth || 800;
-            canvasVentas.height = 300;
-            
-            const ctxVentas = canvasVentas.getContext('2d');
-            
-            // Destruir gráfica anterior si existe
-            if (window.ventasChart) {
-                window.ventasChart.destroy();
-            }
-            
-            window.ventasChart = new Chart(ctxVentas, {
-                type: 'line',
-                data: {
-                    labels: diasSemana,
-                    datasets: [{
-                        label: 'Ventas ($)',
-                        data: ventasSemana,
-                        borderColor: '#ffd700',
-                        backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.3,
-                        fill: true,
-                        pointBackgroundColor: '#000000',
-                        pointBorderColor: '#ffd700',
-                        pointBorderWidth: 2,
-                        pointRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return '$ ' + context.parsed.y.toLocaleString('es-CO');
-                                }
-                            }
+                    try {
+                        const response = await fetch("{{ url_for('ventas.analisis_ia') }}", {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ task: task })
+                        });
+                        const data = await response.json();
+                        
+                        if (!response.ok) throw new Error(data.error || 'Error en el servidor');
+
+                        analysisTextDiv.innerHTML = typeof marked !== 'undefined' ? marked.parse(data.analysis_text) : data.analysis_text;
+                        
+                        if (data.chart_data) {
+                            const ctx = document.getElementById('iaChartCanvas').getContext('2d');
+                            
+                            // Paleta de colores para gráficas (especialmente útil para doughnut/pie)
+                            const colors = [
+                                'rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)', 
+                                'rgba(75, 192, 192, 0.7)', 'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)',
+                                '#ffd700', '#000000', '#28a745', '#17a2b8'
+                            ];
+                            
+                            iaChart = new Chart(ctx, {
+                                type: data.chart_data.chart_type || 'bar',
+                                data: {
+                                    labels: data.chart_data.labels,
+                                    datasets: [{
+                                        label: data.chart_data.label,
+                                        data: data.chart_data.values,
+                                        backgroundColor: colors.slice(0, data.chart_data.values.length),
+                                        borderColor: '#ffffff',
+                                        borderWidth: 1
+                                    }]
+                                },
+                                options: { responsive: true, maintainAspectRatio: false }
+                            });
                         }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                            ticks: {
-                                callback: function(value) {
-                                    return '$' + value.toLocaleString('es-CO');
-                                }
-                            }
-                        }
+
+                        modalLoading.style.display = 'none';
+                        modalContent.style.display = 'block';
+                    } catch (err) {
+                        modalError.textContent = err.message;
+                        modalError.style.display = 'block';
+                        modalLoading.style.display = 'none';
                     }
-                }
-            });
-            console.log('Gráfica de ventas creada');
-        }
-
-        // ============================================
-        // GRÁFICA DE STOCK
-        // ============================================
-        const canvasStock = document.getElementById('stockGeneroChart');
-        if (canvasStock) {
-            console.log('Configurando canvas de stock');
-            
-            // Forzar dimensiones
-            canvasStock.style.width = '100%';
-            canvasStock.style.height = '300px';
-            canvasStock.width = canvasStock.clientWidth || 400;
-            canvasStock.height = 300;
-            
-            const ctxStock = canvasStock.getContext('2d');
-            
-            // Destruir gráfica anterior si existe
-            if (window.stockChart) {
-                window.stockChart.destroy();
-            }
-            
-            window.stockChart = new Chart(ctxStock, {
-                type: 'doughnut',
-                data: {
-                    labels: generos,
-                    datasets: [{
-                        data: stockGeneros,
-                        backgroundColor: [
-                            '#ffd700',
-                            '#000000',
-                            '#333333',
-                            '#666666',
-                            '#999999',
-                            '#cccccc'
-                        ],
-                        borderWidth: 0,
-                        hoverOffset: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { 
-                            position: 'bottom',
-                            labels: { boxWidth: 12, font: { size: 11 } }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.label + ': ' + context.parsed + ' libros';
-                                }
-                            }
-                        }
-                    },
-                    cutout: '60%'
-                }
-            });
-            console.log('Gráfica de stock creada');
-        }
-    }
-
-    // Esperar a que el DOM esté listo
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM cargado, esperando un momento...');
-        
-        // Pequeño retraso para asegurar que todo está renderizado
-        setTimeout(initCharts, 100);
-        
-        // Fecha actual
-        const fecha = new Date();
-        const opciones = { year: 'numeric', month: 'long', day: 'numeric' };
-        const fechaSpan = document.getElementById('fecha-actual');
-        if (fechaSpan) {
-            fechaSpan.textContent = fecha.toLocaleDateString('es-ES', opciones);
-        }
-        
-        // Botón de actualizar
-        const refreshBtn = document.getElementById('refreshData');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', function() {
-                const btn = this;
-                btn.innerHTML = '<i class="bi bi-arrow-repeat me-2 spin"></i>Actualizando...';
-                btn.disabled = true;
-                
-                setTimeout(function() {
-                    btn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Actualizar';
-                    btn.disabled = false;
-                    alert('Datos actualizados (modo demostración)');
-                }, 1500);
+                });
             });
         }
     });
