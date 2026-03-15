@@ -12,6 +12,7 @@
     
     <!-- Fuente opcional para mejor tipografía -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
     <!-- Navbar mejorado con íconos de Bootstrap Icons -->
@@ -210,5 +211,6 @@
     </div>
     <!-- Bootstrap 5 JavaScript (necesario para el menú hamburguesa) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -127,7 +127,7 @@ def editar_libro(id):
     return render_template("editar_libro.html", libro=libro, error=error)
 
 # ELIMINAR LIBRO
-@libros_bp.route("/libros/eliminar/<int:id>")
+@libros_bp.route("/libros/eliminar/<int:id>", methods=["POST"])
 def eliminar_libro(id):
 
     libro = Libro.query.get_or_404(id)
