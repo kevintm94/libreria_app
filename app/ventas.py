@@ -207,9 +207,7 @@ def analisis_ia():
 
         except Exception as e:
             return jsonify({'error': f'Error al procesar el análisis: {str(e)}'}), 500
-    elif task == 'stock_bajo':
 
-<<<<<<< HEAD
     elif task == 'perfil_cliente':
             try:
                 # Consultar top 5 clientes por monto total comprado
@@ -245,7 +243,7 @@ def analisis_ia():
                 return consultar_groq(groq_client, prompt, current_app.config['GROQ_MODEL'])
             except Exception as e:
                 return jsonify({'error': f'Error en perfil cliente: {str(e)}'}), 500
-=======
+    elif task == 'stock_bajo':
         try:
 
             libros = Libro.query.filter(Libro.stock >= 0).order_by(Libro.stock.asc()).limit(10).all()
@@ -282,7 +280,6 @@ def analisis_ia():
 
         except Exception as e:
             return jsonify({'error': f'Error en stock bajo: {str(e)}'}), 500
->>>>>>> b0f3a20 (Dashboard con analisis IA y libros con bajo stock)
     
     return jsonify({'error': 'Tarea no reconocida'}), 400
 
