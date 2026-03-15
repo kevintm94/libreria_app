@@ -71,51 +71,86 @@ def detalle_venta(id_venta):
 @ventas_bp.route('/dashboard')
 @login_required
 def dashboard():
-    """Dashboard con gráficas de ventas y stock (datos mockup)"""
-    
-    # Solo admin y gerente pueden ver el dashboard
+    """Dashboard con datos dinámicos desde la base de datos."""
+
     if current_user.rol not in ['admin', 'gerente']:
         flash('No tienes permiso para acceder al dashboard', 'danger')
         return redirect(url_for('ventas.listar_ventas'))
-    
-    # ============================================
-    # DATOS MOCKUP (SIMULADOS - PARA DISEÑO)
-    # ============================================
-    
-    # Datos para gráfica de ventas (últimos 7 días)
-    dias_semana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-    ventas_semana = [450000, 520000, 380000, 610000, 720000, 890000, 950000]
-    
-    # Datos para gráfica de stock por género
-    generos = ['Ficción', 'No Ficción', 'Ciencia', 'Infantil', 'Poesía', 'Técnico']
-    stock_generos = [120, 85, 45, 70, 30, 55]
-    
-    # KPIs simulados
+
+    # --- 1. CÁLCULO DE KPIs ---
+    today = datetime.utcnow().date()
+    seven_days_ago = today - timedelta(days=6)
+    start_of_month = today.replace(day=1)
+
+    # KPIs de ventas
+    ventas_hoy = db.session.query(func.sum(Venta.total)).filter(func.date(Venta.fecha_venta) == today).scalar() or 0
+    ventas_semana_kpi = db.session.query(func.sum(Venta.total)).filter(Venta.fecha_venta >= seven_days_ago).scalar() or 0
+    ventas_mes_kpi = db.session.query(func.sum(Venta.total)).filter(Venta.fecha_venta >= start_of_month).scalar() or 0
+
+    # KPIs de inventario y clientes
+    libros_vendidos_mes = db.session.query(func.sum(DetalleVenta.cantidad)).join(Venta).filter(Venta.fecha_venta >= start_of_month).scalar() or 0
+    stock_total = db.session.query(func.sum(Libro.stock)).scalar() or 0
+
+    # Clientes nuevos este mes (aquellos cuya primera compra fue este mes)
+    subquery = db.session.query(
+        Venta.id_cliente,
+        func.min(Venta.fecha_venta).label('primera_compra')
+    ).group_by(Venta.id_cliente).subquery()
+    clientes_nuevos_mes = db.session.query(func.count(subquery.c.id_cliente)).filter(subquery.c.primera_compra >= start_of_month).scalar() or 0
+
     kpis = {
-        'ventas_hoy': 125000,
-        'ventas_semana': 4520000,
-        'ventas_mes': 18500000,
-        'libros_vendidos': 342,
-        'stock_total': 405,
-        'clientes_nuevos': 28
+        'ventas_hoy': ventas_hoy,
+        'ventas_semana': ventas_semana_kpi,
+        'ventas_mes': ventas_mes_kpi,
+        'libros_vendidos': libros_vendidos_mes,
+        'stock_total': stock_total,
+        'clientes_nuevos': clientes_nuevos_mes
     }
-    
-    # Libros más vendidos (simulado)
-    top_libros = [
-        {'titulo': 'Cien Años de Soledad', 'ventas': 45, 'stock': 12},
-        {'titulo': '1984', 'ventas': 38, 'stock': 8},
-        {'titulo': 'El Principito', 'ventas': 32, 'stock': 15},
-        {'titulo': 'Harry Potter y la Piedra Filosofal', 'ventas': 28, 'stock': 20},
-        {'titulo': 'Don Quijote de la Mancha', 'ventas': 22, 'stock': 7}
+
+    # --- 2. DATOS PARA GRÁFICA DE VENTAS SEMANALES ---
+    fechas_semana = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    dias_es = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+    dias_labels = [dias_es[d.weekday()] for d in fechas_semana]
+
+    ventas_por_dia_query = db.session.query(
+        func.date(Venta.fecha_venta).label('dia'),
+        func.sum(Venta.total).label('total')
+    ).filter(Venta.fecha_venta >= seven_days_ago).group_by('dia').all()
+
+    ventas_dict = {v.dia: float(v.total) for v in ventas_por_dia_query}
+    ventas_semana_data = [ventas_dict.get(d, 0) for d in fechas_semana]
+
+    # --- 3. DATOS PARA GRÁFICA DE STOCK POR GÉNERO ---
+    stock_por_genero_query = db.session.query(
+        Libro.genero,
+        func.sum(Libro.stock).label('total_stock')
+    ).group_by(Libro.genero).order_by(func.sum(Libro.stock).desc()).limit(7).all()
+
+    generos_data = [g.genero or 'Sin Género' for g in stock_por_genero_query]
+    stock_generos_data = [int(g.total_stock) for g in stock_por_genero_query]
+
+    # --- 4. DATOS PARA TABLA DE TOP 5 LIBROS MÁS VENDIDOS ---
+    top_libros_query = db.session.query(
+        Libro.titulo,
+        Libro.stock,
+        func.sum(DetalleVenta.cantidad).label('ventas')
+    ).join(DetalleVenta, DetalleVenta.id_libro == Libro.id_libro)\
+     .group_by(Libro.id_libro)\
+     .order_by(func.sum(DetalleVenta.cantidad).desc())\
+     .limit(5).all()
+
+    top_libros_data = [
+        {'titulo': libro.titulo, 'ventas': int(libro.ventas), 'stock': libro.stock}
+        for libro in top_libros_query
     ]
-    
+
     return render_template('dashboard.html',
-                          dias_semana=dias_semana,
-                          ventas_semana=ventas_semana,
-                          generos=generos,
-                          stock_generos=stock_generos,
+                          dias_semana=dias_labels,
+                          ventas_semana=ventas_semana_data,
+                          generos=generos_data,
+                          stock_generos=stock_generos_data,
                           kpis=kpis,
-                          top_libros=top_libros)
+                          top_libros=top_libros_data)
 
 @ventas_bp.route('/dashboard/analisis_ia', methods=['POST'])
 @login_required
@@ -173,77 +208,7 @@ def analisis_ia():
         except Exception as e:
             return jsonify({'error': f'Error al procesar el análisis: {str(e)}'}), 500
 
-    elif task == 'stock_bajo':
-        try:
-            # Consultar los 10 libros con menos stock (mayor a 0 para no traer descontinuados si fuera el caso)
-            libros = Libro.query.filter(Libro.stock >= 0).order_by(Libro.stock.asc()).limit(10).all()
-            
-            if not libros:
-                return jsonify({'error': 'No hay libros registrados para analizar.'}), 404
-
-            # Formatear datos y construir el prompt para la IA
-            data_str = "\n".join([f"- {l.titulo} (Stock: {l.stock}, Género: {l.genero})" for l in libros])
-            labels_json = json.dumps([l.titulo for l in libros])
-            values_json = json.dumps([l.stock for l in libros])
-            
-            prompt = f"""
-            Analiza estos libros que tienen el stock más bajo en la librería.
-            Dame recomendaciones de reabastecimiento y alerta sobre géneros críticos.
-            
-            Libros:
-            {data_str}
-            
-            Tu respuesta DEBE ser un JSON válido. Rellena únicamente el campo `analysis_text`.
-            {{
-              "analysis_text": "Análisis y recomendaciones en markdown.",
-              "chart_data": {{
-                "chart_type": "bar",
-                "label": "Stock Actual",
-                "labels": {labels_json},
-                "values": {values_json}
-              }}
-            }}
-            """
-            return consultar_groq(groq_client, prompt, current_app.config['GROQ_MODEL'])
-        except Exception as e:
-            return jsonify({'error': f'Error en stock bajo: {str(e)}'}), 500
-
-    elif task == 'perfil_cliente':
-        try:
-            # Consultar top 5 clientes por monto total comprado
-            clientes = db.session.query(
-                Cliente.nombre, Cliente.apellido, func.sum(Venta.total).label('total_comprado')
-            ).join(Venta).group_by(Cliente.id_cliente).order_by(func.sum(Venta.total).desc()).limit(5).all()
-            
-            if not clientes:
-                return jsonify({'error': 'No hay suficientes datos de ventas.'}), 404
-
-            # Formatear datos y construir el prompt para la IA
-            data_str = "\n".join([f"- {c.nombre} {c.apellido}: ${c.total_comprado}" for c in clientes])
-            labels_json = json.dumps([f"{c.nombre} {c.apellido}" for c in clientes])
-            values_json = json.dumps([float(c.total_comprado) for c in clientes])
-            
-            prompt = f"""
-            Analiza a los mejores clientes de la librería. Define brevemente su perfil (basado en su gasto) y sugiere 2 acciones de fidelización.
-            
-            Top Clientes:
-            {data_str}
-            
-            Tu respuesta DEBE ser un JSON válido. Rellena únicamente el campo `analysis_text`.
-            {{
-              "analysis_text": "Perfil y estrategias en markdown.",
-              "chart_data": {{
-                "chart_type": "doughnut", 
-                "label": "Gasto Total",
-                "labels": {labels_json},
-                "values": {values_json}
-              }}
-            }}
-            """
-            return consultar_groq(groq_client, prompt, current_app.config['GROQ_MODEL'])
-        except Exception as e:
-            return jsonify({'error': f'Error en perfil cliente: {str(e)}'}), 500
-
+    
     return jsonify({'error': 'Tarea no reconocida'}), 400
 
 def consultar_groq(client, prompt, model):
