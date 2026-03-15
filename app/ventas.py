@@ -208,6 +208,41 @@ def analisis_ia():
         except Exception as e:
             return jsonify({'error': f'Error al procesar el análisis: {str(e)}'}), 500
 
+    elif task == 'perfil_cliente':
+            try:
+                # Consultar top 5 clientes por monto total comprado
+                clientes = db.session.query(
+                    Cliente.nombre, Cliente.apellido, func.sum(Venta.total).label('total_comprado')
+                ).join(Venta).group_by(Cliente.id_cliente).order_by(func.sum(Venta.total).desc()).limit(5).all()
+                
+                if not clientes:
+                    return jsonify({'error': 'No hay suficientes datos de ventas.'}), 404
+
+                # Formatear datos y construir el prompt para la IA
+                data_str = "\n".join([f"- {c.nombre} {c.apellido}: ${c.total_comprado}" for c in clientes])
+                labels_json = json.dumps([f"{c.nombre} {c.apellido}" for c in clientes])
+                values_json = json.dumps([float(c.total_comprado) for c in clientes])
+                
+                prompt = f"""
+                Analiza a los mejores clientes de la librería. Define brevemente su perfil (basado en su gasto) y sugiere 2 acciones de fidelización.
+                
+                Top Clientes:
+                {data_str}
+                
+                Tu respuesta DEBE ser un JSON válido. Rellena únicamente el campo analysis_text.
+                {{
+                "analysis_text": "Perfil y estrategias en markdown.",
+                "chart_data": {{
+                    "chart_type": "doughnut", 
+                    "label": "Gasto Total",
+                    "labels": {labels_json},
+                    "values": {values_json}
+                }}
+                }}
+                """
+                return consultar_groq(groq_client, prompt, current_app.config['GROQ_MODEL'])
+            except Exception as e:
+                return jsonify({'error': f'Error en perfil cliente: {str(e)}'}), 500
     
     return jsonify({'error': 'Tarea no reconocida'}), 400
 
