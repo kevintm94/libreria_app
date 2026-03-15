@@ -207,7 +207,9 @@ def analisis_ia():
 
         except Exception as e:
             return jsonify({'error': f'Error al procesar el análisis: {str(e)}'}), 500
+    elif task == 'stock_bajo':
 
+<<<<<<< HEAD
     elif task == 'perfil_cliente':
             try:
                 # Consultar top 5 clientes por monto total comprado
@@ -243,6 +245,44 @@ def analisis_ia():
                 return consultar_groq(groq_client, prompt, current_app.config['GROQ_MODEL'])
             except Exception as e:
                 return jsonify({'error': f'Error en perfil cliente: {str(e)}'}), 500
+=======
+        try:
+
+            libros = Libro.query.filter(Libro.stock >= 0).order_by(Libro.stock.asc()).limit(10).all()
+
+            if not libros:
+                return jsonify({'error': 'No hay libros registrados para analizar.'}), 404
+
+            data_str = "\n".join([f"- {l.titulo} (Stock: {l.stock}, Género: {l.genero})" for l in libros])
+            labels_json = json.dumps([l.titulo for l in libros])
+            values_json = json.dumps([l.stock for l in libros])
+
+            prompt = f"""
+            Analiza estos libros que tienen el stock más bajo en la librería.
+            Dame recomendaciones de reabastecimiento y alerta sobre géneros críticos.
+
+            Libros:
+            {data_str}
+            Responde ÚNICAMENTE en formato JSON válido.
+            No incluyas texto fuera del json.
+
+            Formato esperado:
+            {{
+              "analysis_text": "Análisis y recomendaciones en markdown.",
+              "chart_data": {{
+                "chart_type": "bar",
+                "label": "Stock Actual",
+                "labels": {labels_json},
+                "values": {values_json}
+              }}
+            }}
+            """
+
+            return consultar_groq(groq_client, prompt, current_app.config['GROQ_MODEL'])
+
+        except Exception as e:
+            return jsonify({'error': f'Error en stock bajo: {str(e)}'}), 500
+>>>>>>> b0f3a20 (Dashboard con analisis IA y libros con bajo stock)
     
     return jsonify({'error': 'Tarea no reconocida'}), 400
 
